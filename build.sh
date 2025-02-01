@@ -5,6 +5,5 @@ gcc -Wall -Werror -std=c99 \
   -lraylib \
   -framework CoreVideo \
   -framework IOKit \
-  -framework Cocoa
-
-./main
+  -framework Cocoa &&
+  ./main
