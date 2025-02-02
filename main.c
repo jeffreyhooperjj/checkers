@@ -18,6 +18,7 @@ typedef struct Checker {
 typedef struct Player {
   Checker cs[PLAYER_CHECKER_COUNT];
   Color c;
+  int selected_piece;
 }Player;
 
 typedef struct GameState {
@@ -27,13 +28,14 @@ typedef struct GameState {
 
 void player_init(Player *p, Color c, int offset) {
   p->c = c;
+  p->selected_piece = -1;
   for (int i = 0; i < PLAYER_CHECKER_COUNT; i++) {
     p->cs[i] = (Checker){
       .pos = {
         .x=i%8,
         .y=i/8 + offset
       },
-      .is_alive = true
+      .is_alive = true,
     };
   }
 }
@@ -82,6 +84,10 @@ void display_board(GameState game, int grid_count, int grid_size, Position board
   }
 }
 
+void player_move(Player *p, int *current_player) {
+
+}
+
 int main() {
   GameState game = {0};
   game_init(&game);
@@ -93,12 +99,42 @@ int main() {
   int grid_size = board_size/grid_count;
   int board_start_x = 150;
   int board_start_y = 50;
+  int current_player_turn = 0;
   while (!WindowShouldClose()) {
     BeginDrawing();
       ClearBackground((Color) {
         .r=200, .g=200, .b=200, .a=255
       });
       display_board(game, grid_count, grid_size, (Position) {board_start_x, board_start_y});
+      // general approach to moving a piece
+      // check if user is hovering over a piece
+      // then if a user clicks on a piece
+      // that piece will be selected to be moved
+      Vector2 mouse_pos = GetMousePosition();
+      for (int i = 0; i < PLAYER_CHECKER_COUNT; i++) {
+        Checker checker = game.players[current_player_turn].cs[i];
+        Rectangle checker_rect = {
+          checker.pos.x * grid_size + board_start_x,
+          checker.pos.y * grid_size + board_start_y,
+          grid_size,
+          grid_size};
+        if (CheckCollisionPointRec(mouse_pos, checker_rect) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+          game.players[current_player_turn].selected_piece = i;
+          DrawRectangleLinesEx(checker_rect, 5.f, BLACK);
+          printf("We are selecting piece: %d\n", i);
+          printf("%d\n", game.players[current_player_turn].selected_piece);
+        } 
+      }
+      int selected_piece = game.players[current_player_turn].selected_piece;
+      if (selected_piece != -1) {
+        Checker checker = game.players[current_player_turn].cs[selected_piece];
+        Rectangle checker_rect = {
+          checker.pos.x * grid_size + board_start_x,
+          checker.pos.y * grid_size + board_start_y,
+          grid_size,
+          grid_size};
+          DrawRectangleLinesEx(checker_rect, 5.f, BLACK);
+      }
     EndDrawing();
   }
   CloseWindow();
