@@ -53,13 +53,32 @@ void game_init(GameState *game) {
   }
 }
 
-void display_board();
-
 void draw_checkers(Player p, int grid_size, Position board_start, int checker_radius) {
   for (int i = 0; i < PLAYER_CHECKER_COUNT; i++) {
     int x_offset = p.cs[i].pos.x * grid_size + board_start.x;
     int y_offset = p.cs[i].pos.y * grid_size + board_start.y;
     DrawCircle(x_offset + grid_size/2, y_offset + grid_size/2, checker_radius, p.c);
+  }
+}
+
+void display_board(GameState game, int grid_count, int grid_size, Position board_start) {
+  // draw grid
+  for (int x = 0; x < grid_count; x++) {
+    for (int y = 0; y < grid_count; y++) {
+      Color c;
+      if ((x + y) % 2 == 0) {
+        c = BLUE;
+      } else {
+        c = GREEN;
+      }
+      // top left corner of each square
+      int x_offset = (x*grid_size) + board_start.x;
+      int y_offset = (y*grid_size) + board_start.y;
+      DrawRectangle(x_offset, y_offset, grid_size, grid_size, c);
+    }
+  }
+  for (int i = 0; i < PLAYER_COUNT; i++) {
+    draw_checkers(game.players[i], grid_size, board_start, 2.f*(float)grid_size/5.f);
   }
 }
 
@@ -79,24 +98,7 @@ int main() {
       ClearBackground((Color) {
         .r=200, .g=200, .b=200, .a=255
       });
-      // draw grid
-      for (int x = 0; x < grid_count; x++) {
-        for (int y = 0; y < grid_count; y++) {
-          Color c;
-          if ((x + y) % 2 == 0) {
-            c = BLUE;
-          } else {
-            c = GREEN;
-          }
-          // top left corner of each square
-          int x_offset = (x*grid_size) + board_start_x;
-          int y_offset = (y*grid_size) + board_start_y;
-          DrawRectangle(x_offset, y_offset, grid_size, grid_size, c);
-        }
-      }
-      for (int i = 0; i < PLAYER_COUNT; i++) {
-        draw_checkers(game.players[i], grid_size, (Position) {board_start_x, board_start_y}, 2.f*(float)grid_size/5.f);
-      }
+      display_board(game, grid_count, grid_size, (Position) {board_start_x, board_start_y});
     EndDrawing();
   }
   CloseWindow();
