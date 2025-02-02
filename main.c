@@ -4,6 +4,7 @@
 
 #define PLAYER_CHECKER_COUNT 16
 #define PLAYER_COUNT 2
+#define BACKGROUND_COLOR (Color) {175, 128, 79, 255}
 
 typedef struct Position {
   int x;
@@ -69,9 +70,9 @@ void display_board(GameState game, int grid_count, int grid_size, Position board
     for (int y = 0; y < grid_count; y++) {
       Color c;
       if ((x + y) % 2 == 0) {
-        c = BLUE;
+        c = WHITE;
       } else {
-        c = GREEN;
+        c = BACKGROUND_COLOR;
       }
       // top left corner of each square
       int x_offset = (x*grid_size) + board_start.x;
@@ -86,6 +87,38 @@ void display_board(GameState game, int grid_count, int grid_size, Position board
 
 void player_move(Player *p, int *current_player) {
 
+}
+
+Position get_current_xy_coords_hovering(Vector2 mouse_pos, int grid_count, int grid_size, Position board_start) {
+  for (int x = 0; x < grid_count; x++) {
+    for (int y = 0; y < grid_count; y++) {
+      Rectangle board_rect = {
+        x * grid_size + board_start.x,
+        y * grid_size + board_start.y,
+        grid_size,
+        grid_size
+      };
+      if (CheckCollisionPointRec(mouse_pos, board_rect)) {
+        return (Position) {x, y};
+      }
+    }
+  }
+  // mouse is not hovering above board
+  return (Position) {-1, -1};
+}
+
+
+bool is_empty_space(GameState game, Position board_idx) {
+  for (int i = 0; i < PLAYER_COUNT; i++) {
+    Player p = game.players[i];
+    for (int c = 0; c < PLAYER_CHECKER_COUNT; c++) {
+      Position checker_pos = p.cs[c].pos;
+      if (checker_pos.x == board_idx.x && checker_pos.y == board_idx.y) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 int main() {
@@ -121,8 +154,6 @@ int main() {
         if (CheckCollisionPointRec(mouse_pos, checker_rect) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
           game.players[current_player_turn].selected_piece = i;
           DrawRectangleLinesEx(checker_rect, 5.f, BLACK);
-          printf("We are selecting piece: %d\n", i);
-          printf("%d\n", game.players[current_player_turn].selected_piece);
         } 
       }
       int selected_piece = game.players[current_player_turn].selected_piece;
@@ -134,6 +165,16 @@ int main() {
           grid_size,
           grid_size};
           DrawRectangleLinesEx(checker_rect, 5.f, BLACK);
+      }
+      if (selected_piece != -1) {
+        // get rect at current mouse position
+        Position current_pos = get_current_xy_coords_hovering(mouse_pos, grid_count, grid_size, (Position) {board_start_x, board_start_y});
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && is_empty_space(game, current_pos)) {
+          game.players[current_player_turn].cs[selected_piece].pos = current_pos;
+          game.players[current_player_turn].selected_piece = -1;
+          
+          // change player_turn
+        }
       }
     EndDrawing();
   }
