@@ -272,6 +272,21 @@ bool is_valid_move(GameState *game, Position selected_board_pos) {
   return is_empty_space(*game, selected_board_pos) && can_move_to_position;
 }
 
+void player_select_piece(Player *curr_player, Vector2 mouse_pos, int grid_size, Position board_start) {
+  for (int i = 0; i < PLAYER_CHECKER_COUNT; i++) {
+    Checker checker = curr_player->cs[i];
+    Rectangle checker_rect = {
+      checker.pos.x * grid_size + board_start.x,
+      checker.pos.y * grid_size + board_start.y,
+      grid_size,
+      grid_size};
+    // draw rectangle around selected piece
+    if (CheckCollisionPointRec(mouse_pos, checker_rect) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+      curr_player->selected_piece = i;
+    } 
+  }
+}
+
 int main() {
   GameState game = {0};
   // TODO: learn how to use camera/rotate rectangles
@@ -291,32 +306,22 @@ int main() {
   int grid_size = board_size/grid_count;
   int board_start_x = 150;
   int board_start_y = 50;
+  Position board_start = (Position) {board_start_x, board_start_y};
   //int current_player_turn = 0;
   while (!WindowShouldClose()) {
     BeginDrawing();
       ClearBackground((Color) {
         .r=200, .g=200, .b=200, .a=255
       });
-      display_board(game, grid_count, grid_size, (Position) {board_start_x, board_start_y});
+      display_board(game, grid_count, grid_size, board_start);
       // general approach to moving a piece
       // check if user is hovering over a piece
       // then if a user clicks on a piece
       // that piece will be selected to be moved
       Vector2 mouse_pos = GetMousePosition();
       Player *curr_player = game.current_player;
-      for (int i = 0; i < PLAYER_CHECKER_COUNT; i++) {
-        Checker checker = curr_player->cs[i];
-        Rectangle checker_rect = {
-          checker.pos.x * grid_size + board_start_x,
-          checker.pos.y * grid_size + board_start_y,
-          grid_size,
-          grid_size};
-        if (CheckCollisionPointRec(mouse_pos, checker_rect) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-          curr_player->selected_piece = i;
-          DrawRectangleLinesEx(checker_rect, 5.f, BLACK);
-        } 
-      }
-      // should be selectee_piece_idx
+      player_select_piece(curr_player, mouse_pos, grid_size, board_start);
+      // should be selected_piece_idx
       int selected_piece = curr_player->selected_piece;
       if (selected_piece != -1) {
         Checker checker = curr_player->cs[selected_piece];
