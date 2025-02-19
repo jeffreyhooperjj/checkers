@@ -287,6 +287,42 @@ void player_select_piece(Player *curr_player, Vector2 mouse_pos, int grid_size, 
   }
 }
 
+void draw_selected_checker_board(Player *curr_player, int grid_size, Position board_start) {
+  int selected_piece = curr_player->selected_piece;
+  if (selected_piece != -1) {
+    Checker checker = curr_player->cs[selected_piece];
+    Rectangle checker_rect = {
+      checker.pos.x * grid_size + board_start.x,
+      checker.pos.y * grid_size + board_start.y,
+      grid_size,
+      grid_size};
+      DrawRectangleLinesEx(checker_rect, 5.f, BLACK);
+  }
+}
+
+void player_attempt_move(GameState *game, Vector2 mouse_pos, int grid_size, int grid_count, Position board_start) {
+  Player *curr_player = game->current_player;
+  int selected_piece = curr_player->selected_piece;
+  if (selected_piece == -1) {
+    return;
+  }
+  // get rect at current mouse position
+  Position current_pos = get_current_xy_coords_hovering(
+    mouse_pos, grid_count, grid_size, board_start 
+  );
+  if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && is_valid_move(game, current_pos)) {
+    // make move
+    curr_player->cs[selected_piece].pos = current_pos;
+    curr_player->selected_piece = -1;
+    
+    // change player_turn
+    int curr_player_idx = (curr_player == &game->players[PLAYER_ONE]) ? PLAYER_ONE : PLAYER_TWO;
+    curr_player_idx += 1;
+    curr_player_idx %= PLAYER_COUNT;
+    game->current_player = &game->players[curr_player_idx];
+  }
+}
+
 int main() {
   GameState game = {0};
   // TODO: learn how to use camera/rotate rectangles
@@ -321,34 +357,8 @@ int main() {
       Vector2 mouse_pos = GetMousePosition();
       Player *curr_player = game.current_player;
       player_select_piece(curr_player, mouse_pos, grid_size, board_start);
-      // should be selected_piece_idx
-      int selected_piece = curr_player->selected_piece;
-      if (selected_piece != -1) {
-        Checker checker = curr_player->cs[selected_piece];
-        Rectangle checker_rect = {
-          checker.pos.x * grid_size + board_start_x,
-          checker.pos.y * grid_size + board_start_y,
-          grid_size,
-          grid_size};
-          DrawRectangleLinesEx(checker_rect, 5.f, BLACK);
-      }
-      if (selected_piece != -1) {
-        // get rect at current mouse position
-        Position current_pos = get_current_xy_coords_hovering(
-          mouse_pos, grid_count, grid_size, (Position) {board_start_x, board_start_y}
-        );
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && is_valid_move(&game, current_pos)) {
-          // make move
-          curr_player->cs[selected_piece].pos = current_pos;
-          curr_player->selected_piece = -1;
-          
-          // change player_turn
-          int curr_player_idx = (curr_player == &game.players[PLAYER_ONE]) ? PLAYER_ONE : PLAYER_TWO;
-          curr_player_idx += 1;
-          curr_player_idx %= PLAYER_COUNT;
-          game.current_player = &game.players[curr_player_idx];
-        }
-      }
+      draw_selected_checker_board(curr_player, grid_size, board_start);
+      player_attempt_move(&game, mouse_pos, grid_size, grid_count, board_start);
     EndDrawing();
   }
   CloseWindow();
